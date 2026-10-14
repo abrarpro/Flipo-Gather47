@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flipo Gather // Cyber Intelligence Dossier System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF for client-side PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Google Fonts: Rajdhani (Hitman Tactical HUD), Share Tech Mono & JetBrains Mono (Hacker Terminal) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300..800;1,300..800&family=Rajdhani:wght@600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                        hacker: ['"Share Tech Mono"', 'monospace'],
+                        hitman: ['"Rajdhani"', '"Share Tech Mono"', 'sans-serif'],
+                    },
+                    colors: {
+                        cyber: {
+                            bg: '#050507',
+                            panel: '#0b0b10',
+                            card: '#111118',
+                            border: '#331019',
+                            neon: '#ff003c',
+                            cyan: '#00f0ff',
+                            matrix: '#00ff66',
+                            amber: '#ffb800',
+                            danger: '#ff1e42',
+                            dim: '#7a2032'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <style>
+        :root {
+            --hitman-red: #ff003c;
+            --neon-cyan: #00f0ff;
+            --dark-bg: #050507;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #f1f5f9;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 0, 60, 0.14) 0%, transparent 62%),
+                radial-gradient(circle at 85% 80%, rgba(0, 240, 255, 0.05) 0%, transparent 50%),
+                linear-gradient(rgba(255, 0, 60, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 0, 60, 0.035) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+        }
+
+        /* Subtle CRT Scanline Overlay */
+        .crt-overlay {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.28) 50%
+            );
+            background-size: 100% 4px;
+            z-index: 50;
+            opacity: 0.45;
+        }
+
+        /* Hitman ICA + Hacker Tactical Containers */
+        .cyber-box {
+            background: linear-gradient(180deg, rgba(14, 14, 20, 0.94) 0%, rgba(9, 9, 13, 0.96) 100%);
+            border: 1px solid #3a121c;
+            box-shadow: 0 0 25px rgba(255, 0, 60, 0.06), inset 0 0 18px rgba(255, 0, 60, 0.02);
+            position: relative;
+        }
+
+        .cyber-box::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 14px;
+            height: 14px;
+            border-top: 2px solid #ff003c;
+            border-left: 2px solid #ff003c;
+            pointer-events: none;
+        }
+
+        .cyber-box::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 14px;
+            height: 14px;
+            border-bottom: 2px solid #ff003c;
+            border-right: 2px solid #ff003c;
+            pointer-events: none;
+        }
+
+        .cyber-input {
+            background-color: rgba(6, 6, 9, 0.92);
+            border: 1px solid #2e151d;
+            color: #f8fafc;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .cyber-input:focus {
+            outline: none;
+            border-color: #ff003c;
+            box-shadow: 0 0 12px rgba(255, 0, 60, 0.3);
+            background-color: rgba(16, 8, 12, 0.96);
+            color: #ffffff;
+        }
+
+        .cyber-input::placeholder {
+            color: #523841;
+        }
+
+        .cyber-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .cyber-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 18px rgba(255, 0, 60, 0.4);
+        }
+
+        .cyber-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Agent 47 Barcode Visual Strip */
+        .agent-barcode {
+            background: repeating-linear-gradient(
+                90deg,
+                #f8fafc 0px,
+                #f8fafc 2px,
+                transparent 2px,
+                transparent 5px,
+                #ff003c 5px,
+                #ff003c 6px,
+                transparent 6px,
+                transparent 9px,
+                #f8fafc 9px,
+                #f8fafc 12px,
+                transparent 12px,
+                transparent 14px
+            );
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050507;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a121c;
+            border-radius: 4px;
+            border: 1px solid #ff003c;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff003c;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.35; }
+        }
+        .animate-pulse-fast {
+            animation: pulseGlow 1.6s infinite;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col selection:bg-cyber-neon selection:text-white">
+    <!-- CRT Scanline Effect -->
+    <div id="crtOverlay" class="crt-overlay"></div>
+
+    <!-- Top Terminal Navbar -->
+    <header class="sticky top-0 z-40 border-b border-cyber-border bg-cyber-bg/95 backdrop-blur-md">
+        <div class="max-w-[1600px] mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <!-- Brand Title -->
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded bg-cyber-neon/15 border border-cyber-neon flex items-center justify-center text-cyber-neon shadow-[0_0_15px_rgba(255,0,60,0.4)] relative">
+                    <i class="fa-solid fa-crosshairs text-xl"></i>
+                    <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyber-neon animate-ping"></span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <h1 class="font-hitman text-2xl sm:text-3xl tracking-widest text-white font-bold uppercase drop-shadow-[0_0_10px_rgba(255,0,60,0.6)]">
+                            FLIPO <span class="text-cyber-neon">GATHER</span>
+                        </h1>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-cyber-neon/20 text-cyber-neon border border-cyber-neon/60 font-mono font-bold">
+                            ICA // OSINT-47
+                        </span>
+                        <div class="hidden sm:flex flex-col items-center ml-1">
+                            <div class="w-16 h-3 agent-barcode opacity-80"></div>
+                            <span class="text-[8px] tracking-[0.25em] text-slate-400 font-mono">047-991-X</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 font-mono tracking-wide">
+                        HITMAN CONTRACT RECONNAISSANCE &amp; HACKER DOSSIER ENGINE
+                    </p>
+                </div>
+            </div>
+
+            <!-- Live Status & Quick Actions -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded bg-cyber-panel border border-cyber-border text-xs text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-cyber-neon animate-pulse-fast"></span>
+                    <span>PROTOCOL: <strong class="text-cyber-neon">1 CONTRACT = PNG</strong> | <strong class="text-cyber-cyan">1+ CONTRACTS/PAGES = PDF</strong></span>
+                </div>
+
+                <button id="loadDemoBtn" type="button" class="cyber-btn px-3 py-1.5 rounded text-xs font-semibold bg-cyber-neon/15 text-cyber-neon border border-cyber-neon/70 hover:bg-cyber-neon/25 flex items-center gap-1.5">
+                    <i class="fa-solid fa-crosshairs"></i> Load Agent-47 Contract
+                </button>
+
+                <button id="toggleCrtBtn" type="button" class="px-3 py-1.5 rounded text-xs font-semibold bg-slate-900/80 text-slate-300 border border-slate-700 hover:border-cyber-neon flex items-center gap-1.5" title="Toggle CRT Scanlines">
+                    <i class="fa-solid fa-tv"></i> HUD CRT
+                </button>
+
+                <button id="resetAllBtn" type="button" class="px-3 py-1.5 rounded text-xs font-semibold bg-cyber-danger/10 text-cyber-danger border border-cyber-danger/50 hover:bg-cyber-danger/20 flex items-center gap-1.5">
+                    <i class="fa-solid fa-skull"></i> Burn Dossier
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-[1600px] w-full mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        
+        <!-- LEFT COLUMN: DATA GATHERING FORMS (7 cols on large screens) -->
+        <div class="lg:col-span-7 flex flex-col gap-5">
+
+            <!-- SECTION 1: ORGANIZATION INFORMATION -->
+            <section class="cyber-box rounded-lg p-4 sm:p-5">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-cyber-border">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-building-shield text-cyber-neon"></i>
+                        <h2 class="font-hitman text-lg sm:text-xl text-white tracking-wider uppercase font-bold">
+                            [01] Handler / Organization Information
+                        </h2>
+                    </div>
+                    <span class="text-[11px] text-cyber-neon font-mono tracking-wider uppercase">// ICA CONTRACT AUTHORITY</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 1. Organization Name -->
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1 font-medium">
+                            1. Organization Name <span class="text-cyber-neon">*</span>
+                        </label>
+                        <input type="text" id="orgName" placeholder="e.g., INTERNATIONAL CONTRACT AGENCY (ICA)" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 2. Organization Address -->
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1 font-medium">
+                            2. Organization Address
+                        </label>
+                        <input type="text" id="orgAddress" placeholder="e.g., Facility-47, Chongqing Underground Node" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 3. Founder Name -->
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1 font-medium">
+                            3. Founder Name
+                        </label>
+                        <input type="text" id="orgFounder" placeholder="e.g., Diana Burnwood // Root Handler" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 4. Organization Motto -->
+                    <div>
+                        <label class="block text-xs text-slate-300 mb-1 font-medium">
+                            4. Organization Moto
+                        </label>
+                        <input type="text" id="orgMotto" placeholder="e.g., Merces Letifer // Silence Is Golden" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- Organization Photo / Logo Upload -->
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs text-slate-300 mb-1 font-medium">
+                            5. Organization Photo / Agency Insignia
+                        </label>
+                        <div class="flex flex-wrap items-center gap-3 p-2.5 rounded bg-black/50 border border-cyber-border">
+                            <div id="orgPhotoPreviewWrap" class="w-14 h-14 rounded border border-cyber-neon/70 bg-cyber-panel flex items-center justify-center overflow-hidden shrink-0">
+                                <i id="orgPhotoPlaceholder" class="fa-solid fa-skull-crossbones text-cyber-neon text-xl"></i>
+                                <img id="orgPhotoPreview" src="" alt="Org Logo" class="w-full h-full object-cover hidden">
+                            </div>
+                            <div class="flex-1 min-w-[180px]">
+                                <input type="file" id="orgPhotoInput" accept="image/*" class="block w-full text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-cyber-neon/70 file:text-xs file:font-semibold file:bg-cyber-neon/15 file:text-cyber-neon hover:file:bg-cyber-neon/25 cursor-pointer">
+                                <p class="text-[11px] text-slate-400 mt-1">Stamped on the top-left ICA Agency Dossier Seal (PNG/JPG/WebP).</p>
+                            </div>
+                            <button type="button" id="clearOrgPhotoBtn" class="text-xs px-2.5 py-1 rounded bg-cyber-danger/10 text-cyber-danger border border-cyber-danger/40 hover:bg-cyber-danger/20 hidden">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: TARGET INFORMATION (1 to 31) -->
+            <section class="cyber-box rounded-lg p-4 sm:p-5">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-cyber-border">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-crosshairs text-cyber-neon"></i>
+                        <h2 class="font-hitman text-lg sm:text-xl text-white tracking-wider uppercase font-bold">
+                            [02] Contract Target Telemetry (Fields 01 – 31)
+                        </h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="filledCountBadge" class="text-xs px-2.5 py-0.5 rounded bg-cyber-neon/20 text-cyber-neon border border-cyber-neon/60 font-bold">
+                            0 / 30 Intel Locked
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Filter/Search Field Bar for quick jump -->
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+                    <div class="relative flex-1 min-w-[200px]">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-cyber-neon/80 text-xs"></i>
+                        <input type="text" id="fieldFilterInput" placeholder="Search target intel vector by number or keyword (e.g., 'ISP', '26', 'Enemy')..." class="cyber-input w-full pl-8 pr-3 py-1.5 rounded text-xs">
+                    </div>
+                    <button type="button" id="clearFilterBtn" class="px-2.5 py-1.5 rounded text-xs bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyber-neon hidden">
+                        Clear Filter
+                    </button>
+                </div>
+
+                <!-- 30 TARGET FIELDS GRID -->
+                <div id="targetFieldsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                    
+                    <!-- 1. Name -->
+                    <div class="field-item" data-label="1 name">
+                        <label class="block text-xs text-emerald-300 mb-1">1. Name <span class="text-cyber-neon">*</span></label>
+                        <input type="text" id="t_name" placeholder="Target Full Name" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 2. Roll -->
+                    <div class="field-item" data-label="2 roll">
+                        <label class="block text-xs text-emerald-300 mb-1">2. Roll</label>
+                        <input type="text" id="t_roll" placeholder="e.g., 1042" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 3. Section -->
+                    <div class="field-item" data-label="3 section">
+                        <label class="block text-xs text-emerald-300 mb-1">3. Section</label>
+                        <input type="text" id="t_section" placeholder="e.g., Alpha / A" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 4. Phone number -->
+                    <div class="field-item" data-label="4 phone number">
+                        <label class="block text-xs text-emerald-300 mb-1">4. Phone Number</label>
+                        <input type="text" id="t_phone" placeholder="+880 17XX-XXXXXX" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 5. Father name -->
+                    <div class="field-item" data-label="5 father name">
+                        <label class="block text-xs text-emerald-300 mb-1">5. Father Name</label>
+                        <input type="text" id="t_fatherName" placeholder="Father's Full Name" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 6. Mother name -->
+                    <div class="field-item" data-label="6 mother name">
+                        <label class="block text-xs text-emerald-300 mb-1">6. Mother Name</label>
+                        <input type="text" id="t_motherName" placeholder="Mother's Full Name" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 7. Gmail/Email ID -->
+                    <div class="field-item" data-label="7 gmail email id">
+                        <label class="block text-xs text-emerald-300 mb-1">7. Gmail/Email ID</label>
+                        <input type="email" id="t_email" placeholder="target@gmail.com" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 8. Address -->
+                    <div class="field-item" data-label="8 address">
+                        <label class="block text-xs text-emerald-300 mb-1">8. Address</label>
+                        <input type="text" id="t_address" placeholder="Street, City, Zone" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 9. ISP Provider name -->
+                    <div class="field-item" data-label="9 isp provider name">
+                        <label class="block text-xs text-emerald-300 mb-1">9. ISP Provider Name</label>
+                        <input type="text" id="t_isp" placeholder="e.g., Carnaval / Link3 / Starlink" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 10. Instagram ID -->
+                    <div class="field-item" data-label="10 instagram id">
+                        <label class="block text-xs text-emerald-300 mb-1">10. Instagram ID</label>
+                        <input type="text" id="t_instagram" placeholder="@username" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 11. Telegram ID -->
+                    <div class="field-item" data-label="11 telegram id">
+                        <label class="block text-xs text-emerald-300 mb-1">11. Telegram ID</label>
+                        <input type="text" id="t_telegram" placeholder="@tg_handle" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 12. X ID -->
+                    <div class="field-item" data-label="12 x id twitter">
+                        <label class="block text-xs text-emerald-300 mb-1">12. X ID</label>
+                        <input type="text" id="t_xid" placeholder="@x_handle" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 13. Youtub ID -->
+                    <div class="field-item" data-label="13 youtub youtube id">
+                        <label class="block text-xs text-emerald-300 mb-1">13. Youtub ID</label>
+                        <input type="text" id="t_youtube" placeholder="@channel_id" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 14. Favorate Colour -->
+                    <div class="field-item" data-label="14 favorate favorite colour color">
+                        <label class="block text-xs text-emerald-300 mb-1">14. Favorate Colour</label>
+                        <input type="text" id="t_favColor" placeholder="e.g., Matrix Green / Obsidian" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 15. favorate Food -->
+                    <div class="field-item" data-label="15 favorate favorite food">
+                        <label class="block text-xs text-emerald-300 mb-1">15. Favorate Food</label>
+                        <input type="text" id="t_favFood" placeholder="e.g., Kacchi Biryani / Pizza" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 16. Favorate Number -->
+                    <div class="field-item" data-label="16 favorate favorite number">
+                        <label class="block text-xs text-emerald-300 mb-1">16. Favorate Number</label>
+                        <input type="text" id="t_favNumber" placeholder="e.g., 7 / 404" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 17. date of birth -->
+                    <div class="field-item" data-label="17 date of birth dob">
+                        <label class="block text-xs text-emerald-300 mb-1">17. Date of Birth</label>
+                        <input type="date" id="t_dob" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 18. day of birth -->
+                    <div class="field-item" data-label="18 day of birth">
+                        <label class="block text-xs text-emerald-300 mb-1">18. Day of Birth</label>
+                        <input type="text" id="t_birthDay" placeholder="e.g., Friday" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 19. age -->
+                    <div class="field-item" data-label="19 age">
+                        <label class="block text-xs text-emerald-300 mb-1">19. Age</label>
+                        <input type="text" id="t_age" placeholder="e.g., 19 Years" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 20. weight -->
+                    <div class="field-item" data-label="20 weight">
+                        <label class="block text-xs text-emerald-300 mb-1">20. Weight</label>
+                        <input type="text" id="t_weight" placeholder="e.g., 64 kg" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 22. Best Friend Name -->
+                    <div class="field-item" data-label="22 best friend name">
+                        <label class="block text-xs text-emerald-300 mb-1">22. Best Friend Name</label>
+                        <input type="text" id="t_bestFriend" placeholder="Best Friend's Name" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 23. Father Mobile Number -->
+                    <div class="field-item" data-label="23 father mobile number">
+                        <label class="block text-xs text-emerald-300 mb-1">23. Father Mobile Number</label>
+                        <input type="text" id="t_fatherMobile" placeholder="+880 18XX-XXXXXX" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 24. Mother mobile number -->
+                    <div class="field-item" data-label="24 mother mobile number">
+                        <label class="block text-xs text-emerald-300 mb-1">24. Mother Mobile Number</label>
+                        <input type="text" id="t_motherMobile" placeholder="+880 19XX-XXXXXX" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 25. School ID -->
+                    <div class="field-item" data-label="25 school id">
+                        <label class="block text-xs text-emerald-300 mb-1">25. School ID</label>
+                        <input type="text" id="t_schoolId" placeholder="e.g., SCH-2026-889" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 26. NID Number -->
+                    <div class="field-item" data-label="26 nid number">
+                        <label class="block text-xs text-emerald-300 mb-1">26. NID Number</label>
+                        <input type="text" id="t_nid" placeholder="National ID / Smart Card No" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 27. Life Enemy Name -->
+                    <div class="field-item" data-label="27 life enemy name">
+                        <label class="block text-xs text-emerald-300 mb-1">27. Life Enemy Name</label>
+                        <input type="text" id="t_enemy" placeholder="Known Rival / Nemesis" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 28. Personal Number -->
+                    <div class="field-item" data-label="28 personal number">
+                        <label class="block text-xs text-emerald-300 mb-1">28. Personal Number</label>
+                        <input type="text" id="t_personalNum" placeholder="Private / Secondary Line" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 29. Body Colour -->
+                    <div class="field-item" data-label="29 body colour color">
+                        <label class="block text-xs text-emerald-300 mb-1">29. Body Colour</label>
+                        <input type="text" id="t_bodyColor" placeholder="e.g., Fair / Olive / Brown" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 30. What you want to be -->
+                    <div class="field-item sm:col-span-2" data-label="30 what you want to be ambition goal">
+                        <label class="block text-xs text-emerald-300 mb-1">30. What You Want To Be</label>
+                        <input type="text" id="t_ambition" placeholder="e.g., Cybersecurity Architect / White-Hat Researcher" class="cyber-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <!-- 21. Target Photo Upload (Full Width Box) -->
+                    <div class="field-item sm:col-span-2 md:col-span-3" data-label="21 photo picture image">
+                        <label class="block text-xs text-slate-200 mb-1 font-semibold">21. Target Photo (Sniper Optic Mugshot / Biometric Lock)</label>
+                        <div class="flex flex-wrap items-center gap-3 p-3 rounded bg-black/50 border border-cyber-border">
+                            <div class="w-16 h-16 rounded border border-cyber-neon bg-cyber-panel flex items-center justify-center overflow-hidden shrink-0 relative">
+                                <i id="targetPhotoPlaceholder" class="fa-solid fa-user-secret text-cyber-neon text-2xl"></i>
+                                <img id="targetPhotoPreview" src="" alt="Target Photo" class="w-full h-full object-cover hidden">
+                            </div>
+                            <div class="flex-1 min-w-[180px]">
+                                <input type="file" id="targetPhotoInput" accept="image/*" class="block w-full text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-cyber-neon/70 file:text-xs file:font-semibold file:bg-cyber-neon/15 file:text-cyber-neon hover:file:bg-cyber-neon/25 cursor-pointer">
+                                <p class="text-[11px] text-slate-400 mt-1">Rendered inside the Hitman Sniper Reticle &amp; Biometric Scanner Frame in PNG &amp; PDF output.</p>
+                            </div>
+                            <button type="button" id="clearTargetPhotoBtn" class="text-xs px-2.5 py-1 rounded bg-cyber-danger/10 text-cyber-danger border border-cyber-danger/40 hover:bg-cyber-danger/20 hidden">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 31. ADD MORE OPTION (Dynamic Topic & Answer Builder) -->
+                <div class="mt-6 pt-5 border-t border-cyber-border">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <div>
+                            <h3 class="font-hitman text-base sm:text-lg text-cyber-amber uppercase tracking-wider font-bold flex items-center gap-2">
+                                <i class="fa-solid fa-terminal"></i>
+                                31. Add More Option (Custom Classified Intel)
+                            </h3>
+                            <p class="text-xs text-slate-400">
+                                Click "Add More Option" to inject a custom box with <strong class="text-white">1. Topic</strong> &amp; <strong class="text-white">2. Answer</strong>.
+                            </p>
+                        </div>
+
+                        <button type="button" id="addMoreOptionBtn" class="cyber-btn px-3.5 py-2 rounded text-xs font-bold bg-cyber-amber/15 text-cyber-amber border border-cyber-amber hover:bg-cyber-amber/25 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle"></i> + Add More Option
+                        </button>
+                    </div>
+
+                    <!-- Container for dynamic Topic/Answer boxes -->
+                    <div id="extraOptionsContainer" class="space-y-3">
+                        <!-- Dynamically populated Topic/Answer boxes appear here -->
+                    </div>
+                </div>
+
+                <!-- MULTI-TARGET BATCH QUEUE CONTROLS -->
+                <div class="mt-6 pt-4 border-t border-cyber-border flex flex-wrap items-center justify-between gap-3 bg-black/40 p-3.5 rounded-lg border border-cyber-border">
+                    <div>
+                        <div class="text-xs font-bold text-cyber-cyan flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group"></i>
+                            MULTI-CONTRACT BATCH QUEUE (1 = PNG | 1+ = PDF)
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            1 Target on 1 Page exports a <strong class="text-cyber-neon">PNG Dossier</strong>. Queue 1+ targets (or overflow pages) to auto-compile a <strong class="text-cyber-cyan">Multi-Page PDF Contract</strong>.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="button" id="saveTargetToBatchBtn" class="cyber-btn px-3 py-2 rounded text-xs font-bold bg-cyber-cyan/15 text-cyber-cyan border border-cyber-cyan hover:bg-cyber-cyan/25 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-plus"></i> + Lock Target &amp; Add Another (For 1+ PDF)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Saved Batch List (if user adds multiple targets) -->
+                <div id="batchQueueWrapper" class="mt-3 hidden">
+                    <div class="text-xs text-cyber-cyan font-semibold mb-2 flex items-center justify-between">
+                        <span>LOCKED TARGETS IN CONTRACT QUEUE (<span id="batchCountText">0</span>):</span>
+                        <button type="button" id="clearBatchBtn" class="text-[11px] text-cyber-danger hover:underline">Abort Queue</button>
+                    </div>
+                    <div id="batchQueueList" class="flex flex-wrap gap-2"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- RIGHT COLUMN: LIVE DOSSIER PREVIEW & FILE GENERATOR (5 cols on large screens) -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+            <div class="cyber-box rounded-lg p-4 sm:p-5 lg:sticky lg:top-20">
+                <!-- Preview Header -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-cyber-border">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-crosshairs text-cyber-neon"></i>
+                        <h2 class="font-hitman text-lg sm:text-xl text-white tracking-wider uppercase font-bold">
+                            Live ICA // Hacker Dossier
+                        </h2>
+                    </div>
+                    <span id="outputModeBadge" class="text-xs px-2.5 py-1 rounded font-bold bg-cyber-neon/20 text-cyber-neon border border-cyber-neon">
+                        MODE: 1 RECORD &rarr; PNG FILE
+                    </span>
+                </div>
+
+                <!-- Primary Smart Export Button + Explicit Override Buttons -->
+                <div class="space-y-2.5 mb-4">
+                    <button type="button" id="smartGenerateBtn" class="cyber-btn w-full py-3 px-4 rounded-lg font-hitman text-base sm:text-lg font-bold tracking-wider bg-cyber-neon text-white shadow-[0_0_24px_rgba(255,0,60,0.5)] hover:bg-rose-600 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-crosshairs"></i>
+                        <span id="smartBtnText">COMPILE CONTRACT (AUTO: PNG FILE)</span>
+                    </button>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button type="button" id="exportPngBtn" class="cyber-btn py-2 px-3 rounded text-xs font-bold bg-cyber-panel text-cyber-neon border border-cyber-neon/70 hover:bg-cyber-neon/15 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-image"></i> Download PNG File
+                        </button>
+                        <button type="button" id="exportPdfBtn" class="cyber-btn py-2 px-3 rounded text-xs font-bold bg-cyber-panel text-cyber-cyan border border-cyber-cyan/70 hover:bg-cyber-cyan/15 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-file-pdf"></i> Download PDF File
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Page Navigation Controls (when 1+ pages exist) -->
+                <div id="pageNavBar" class="flex items-center justify-between px-3 py-2 mb-3 rounded bg-black/60 border border-cyber-border text-xs">
+                    <button type="button" id="prevPageBtn" class="px-2.5 py-1 rounded bg-cyber-panel border border-cyber-border text-slate-300 hover:border-cyber-neon disabled:opacity-40">
+                        <i class="fa-solid fa-chevron-left"></i> Prev
+                    </button>
+                    <span id="pageIndicatorText" class="font-mono text-cyber-neon font-semibold">
+                        PAGE 1 OF 1
+                    </span>
+                    <button type="button" id="nextPageBtn" class="px-2.5 py-1 rounded bg-cyber-panel border border-cyber-border text-slate-300 hover:border-cyber-neon disabled:opacity-40">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- High-DPI Canvas Preview Viewport -->
+                <div class="relative w-full rounded-lg overflow-hidden border-2 border-slate-300 bg-white shadow-[0_0_30px_rgba(255,0,60,0.18)]">
+                    <canvas id="dossierPreviewCanvas" class="w-full h-auto block bg-white"></canvas>
+                </div>
+
+                <p class="text-[11px] text-slate-400 mt-2.5 text-center font-mono">
+                    <i class="fa-solid fa-barcode text-cyber-neon mr-1"></i>
+                    ICA Tactical White/Gray High-DPI Render (1600&times;2262px A4) &bull; Hitman + Cyber OSINT Theme
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // --- APPLICATION STATE ---
+            const state = {
+                orgPhotoImg: null,      // HTMLImageElement for Organization Logo
+                targetPhotoImg: null,   // HTMLImageElement for Current Target Photo
+                extraOptions: [         // Array of { id, topic, answer } for #31 "Add more option"
+                    { id: 1, topic: 'ICA Threat Classification', answer: 'APEX PRIORITY // ZERO TRACE' }
+                ],
+                savedTargetsBatch: [],  // Array of saved target snapshots for multi-target PDF
+                renderedCanvases: [],   // Array of offscreen high-res canvases (1 per page)
+                currentPreviewPage: 0   // Index of currently previewed page
+            };
+
+            // --- TARGET FIELD DEFINITIONS (Exact order 1-30 from prompt) ---
+            const TARGET_FIELDS = [
+                { num: '01', id: 't_name', label: 'Name', category: 'IDENTITY' },
+                { num: '02', id: 't_roll', label: 'Roll', category: 'IDENTITY' },
+                { num: '03', id: 't_section', label: 'Section', category: 'IDENTITY' },
+                { num: '04', id: 't_phone', label: 'Phone Number', category: 'CONTACT' },
+                { num: '05', id: 't_fatherName', label: 'Father Name', category: 'FAMILY' },
+                { num: '06', id: 't_motherName', label: 'Mother Name', category: 'FAMILY' },
+                { num: '07', id: 't_email', label: 'Gmail/Email ID', category: 'CONTACT' },
+                { num: '08', id: 't_address', label: 'Address', category: 'CONTACT' },
+                { num: '09', id: 't_isp', label: 'ISP Provider Name', category: 'NETWORK' },
+                { num: '10', id: 't_instagram', label: 'Instagram ID', category: 'SOCIAL' },
+                { num: '11', id: 't_telegram', label: 'Telegram ID', category: 'SOCIAL' },
+                { num: '12', id: 't_xid', label: 'X ID', category: 'SOCIAL' },
+                { num: '13', id: 't_youtube', label: 'Youtub ID', category: 'SOCIAL' },
+                { num: '14', id: 't_favColor', label: 'Favorate Colour', category: 'PERSONAL' },
+                { num: '15', id: 't_favFood', label: 'Favorate Food', category: 'PERSONAL' },
+                { num: '16', id: 't_favNumber', label: 'Favorate Number', category: 'PERSONAL' },
+                { num: '17', id: 't_dob', label: 'Date of Birth', category: 'BIOMETRIC' },
+                { num: '18', id: 't_birthDay', label: 'Day of Birth', category: 'BIOMETRIC' },
+                { num: '19', id: 't_age', label: 'Age', category: 'BIOMETRIC' },
+                { num: '20', id: 't_weight', label: 'Weight', category: 'BIOMETRIC' },
+                // #21 is Target Photo (rendered in the biometric photo frame + noted in table)
+                { num: '22', id: 't_bestFriend', label: 'Best Friend Name', category: 'RELATIONS' },
+                { num: '23', id: 't_fatherMobile', label: 'Father Mobile Number', category: 'FAMILY' },
+                { num: '24', id: 't_motherMobile', label: 'Mother Mobile Number', category: 'FAMILY' },
+                { num: '25', id: 't_schoolId', label: 'School ID', category: 'IDENTITY' },
+                { num: '26', id: 't_nid', label: 'NID Number', category: 'IDENTITY' },
+                { num: '27', id: 't_enemy', label: 'Life Enemy Name', category: 'RELATIONS' },
+                { num: '28', id: 't_personalNum', label: 'Personal Number', category: 'CONTACT' },
+                { num: '29', id: 't_bodyColor', label: 'Body Colour', category: 'BIOMETRIC' },
+                { num: '30', id: 't_ambition', label: 'What You Want To Be', category: 'PERSONAL' }
+            ];
+
+            // --- DOM ELEMENTS ---
+            const previewCanvas = document.getElementById('dossierPreviewCanvas');
+            const extraOptionsContainer = document.getElementById('extraOptionsContainer');
+            const filledCountBadge = document.getElementById('filledCountBadge');
+            const outputModeBadge = document.getElementById('outputModeBadge');
+            const smartBtnText = document.getElementById('smartBtnText');
+            const pageIndicatorText = document.getElementById('pageIndicatorText');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+
+            // --- CUSTOM TOAST NOTIFICATION (No alert() used) ---
+            function showToast(message, type = 'success') {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                const borderCol = type === 'danger' ? 'border-cyber-danger text-cyber-danger' :
+                                  type === 'info' ? 'border-cyber-cyan text-cyber-cyan' :
+                                  'border-cyber-neon text-cyber-neon';
+                const icon = type === 'danger' ? 'fa-triangle-exclamation' :
+                             type === 'info' ? 'fa-circle-info' : 'fa-circle-check';
+
+                toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg bg-cyber-bg/95 border ${borderCol} shadow-[0_0_20px_rgba(0,255,102,0.2)] text-xs font-mono transition-all duration-300`;
+                toast.innerHTML = `
+                    <i class="fa-solid ${icon} text-base shrink-0"></i>
+                    <div class="flex-1">${message}</div>
+                `;
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(8px)';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3200);
+            }
+
+            // --- AUTO-CALCULATE DAY OF BIRTH & AGE WHEN DOB (#17) CHANGES ---
+            document.getElementById('t_dob').addEventListener('change', function (e) {
+                const val = e.target.value;
+                if (!val) return;
+                const dobDate = new Date(val + 'T00:00:00');
+                if (isNaN(dobDate.getTime())) return;
+
+                const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const dayName = days[dobDate.getDay()];
+                const birthDayInput = document.getElementById('t_birthDay');
+                if (!birthDayInput.value.trim()) {
+                    birthDayInput.value = dayName;
+                }
+
+                const today = new Date();
+                let age = today.getFullYear() - dobDate.getFullYear();
+                const m = today.getMonth() - dobDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+                    age--;
+                }
+                const ageInput = document.getElementById('t_age');
+                if (age >= 0 && !ageInput.value.trim()) {
+                    ageInput.value = `${age} Years`;
+                }
+                scheduleRender();
+            });
+
+            // --- IMAGE UPLOAD HANDLERS ---
+            function setupImageUpload(inputId, previewId, placeholderId, clearBtnId, onImageLoaded) {
+                const input = document.getElementById(inputId);
+                const preview = document.getElementById(previewId);
+                const placeholder = document.getElementById(placeholderId);
+                const clearBtn = document.getElementById(clearBtnId);
+
+                input.addEventListener('change', function (e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function (evt) {
+                        const img = new Image();
+                        img.onload = function () {
+                            preview.src = evt.target.result;
+                            preview.classList.remove('hidden');
+                            placeholder.classList.add('hidden');
+                            clearBtn.classList.remove('hidden');
+                            onImageLoaded(img);
+                            scheduleRender();
+                        };
+                        img.src = evt.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+
+                clearBtn.addEventListener('click', function () {
+                    input.value = '';
+                    preview.src = '';
+                    preview.classList.add('hidden');
+                    placeholder.classList.remove('hidden');
+                    clearBtn.classList.add('hidden');
+                    onImageLoaded(null);
+                    scheduleRender();
+                });
+            }
+
+            setupImageUpload(
+                'orgPhotoInput',
+                'orgPhotoPreview',
+                'orgPhotoPlaceholder',
+                'clearOrgPhotoBtn',
+                (img) => { state.orgPhotoImg = img; }
+            );
+
+            setupImageUpload(
+                'targetPhotoInput',
+                'targetPhotoPreview',
+                'targetPhotoPlaceholder',
+                'clearTargetPhotoBtn',
+                (img) => { state.targetPhotoImg = img; }
+            );
+
+            // --- 31. ADD MORE OPTION (DYNAMIC TOPIC & ANSWER BOXES) ---
+            function renderExtraOptionsUI() {
+                extraOptionsContainer.innerHTML = '';
+
+                if (state.extraOptions.length === 0) {
+                    const emptyNote = document.createElement('div');
+                    emptyNote.className = 'text-xs text-emerald-500/70 italic p-3 rounded border border-dashed border-cyber-border text-center';
+                    emptyNote.textContent = 'No custom options added yet. Click "+ Add More Option" to add Topic & Answer boxes.';
+                    extraOptionsContainer.appendChild(emptyNote);
+                    return;
+                }
+
+                state.extraOptions.forEach((item, idx) => {
+                    const box = document.createElement('div');
+                    box.className = 'p-3.5 rounded-lg bg-black/50 border border-cyber-amber/50 flex flex-col sm:flex-row items-stretch sm:items-end gap-3 transition-all';
+                    box.innerHTML = `
+                        <div class="flex-1">
+                            <label class="block text-[11px] text-cyber-amber mb-1 font-semibold">
+                                Option #${idx + 1} &mdash; 1. Topic:
+                            </label>
+                            <input type="text" data-idx="${idx}" data-field="topic" value="${escapeHtml(item.topic)}" placeholder="e.g., Blood Group / Secret Alias / Github ID" class="extra-input cyber-input w-full px-3 py-1.5 rounded">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-[11px] text-cyber-neon mb-1 font-semibold">
+                                2. Answer:
+                            </label>
+                            <input type="text" data-idx="${idx}" data-field="answer" value="${escapeHtml(item.answer)}" placeholder="Enter answer details..." class="extra-input cyber-input w-full px-3 py-1.5 rounded">
+                        </div>
+                        <button type="button" data-remove="${idx}" class="remove-extra-btn px-3 py-1.5 rounded text-xs bg-cyber-danger/15 text-cyber-danger border border-cyber-danger/50 hover:bg-cyber-danger/25 shrink-0">
+                            <i class="fa-solid fa-xmark"></i> Remove
+                        </button>
+                    `;
+                    extraOptionsContainer.appendChild(box);
+                });
+
+                // Attach input listeners
+                extraOptionsContainer.querySelectorAll('.extra-input').forEach(inp => {
+                    inp.addEventListener('input', function () {
+                        const i = parseInt(this.getAttribute('data-idx'), 10);
+                        const f = this.getAttribute('data-field');
+                        if (state.extraOptions[i]) {
+                            state.extraOptions[i][f] = this.value;
+                            scheduleRender();
+                        }
+                    });
+                });
+
+                // Attach remove listeners
+                extraOptionsContainer.querySelectorAll('.remove-extra-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const i = parseInt(this.getAttribute('data-remove'), 10);
+                        state.extraOptions.splice(i, 1);
+                        renderExtraOptionsUI();
+                        scheduleRender();
+                        showToast('Custom Topic/Answer box removed.', 'info');
+                    });
+                });
+            }
+
+            document.getElementById('addMoreOptionBtn').addEventListener('click', function () {
+                state.extraOptions.push({
+                    id: Date.now(),
+                    topic: '',
+                    answer: ''
+                });
+                renderExtraOptionsUI();
+                scheduleRender();
+
+                // Focus the newly created Topic input
+                const topicInputs = extraOptionsContainer.querySelectorAll('input[data-field="topic"]');
+                if (topicInputs.length > 0) {
+                    topicInputs[topicInputs.length - 1].focus();
+                }
+            });
+
+            function escapeHtml(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+
+            // --- DATA SNAPSHOT COLLECTOR ---
+            function getOrganizationData() {
+                return {
+                    name: document.getElementById('orgName').value.trim() || 'INTERNATIONAL CONTRACT AGENCY (ICA)',
+                    address: document.getElementById('orgAddress').value.trim() || 'FACILITY-47 // ENCRYPTED DARKNET NODE',
+                    founder: document.getElementById('orgFounder').value.trim() || 'DIANA BURNWOOD // HANDLER-01',
+                    motto: document.getElementById('orgMotto').value.trim() || 'MERCES LETIFER // UNSEEN & OMNISCIENT',
+                    photoImg: state.orgPhotoImg
+                };
+            }
+
+            function getCurrentTargetSnapshot() {
+                const values = {};
+                let filledCount = 0;
+
+                TARGET_FIELDS.forEach(f => {
+                    const el = document.getElementById(f.id);
+                    const val = el ? el.value.trim() : '';
+                    values[f.id] = val;
+                    if (val) filledCount++;
+                });
+
+                if (state.targetPhotoImg) filledCount++;
+
+                // Filter valid extra options
+                const extras = state.extraOptions
+                    .filter(item => item.topic.trim() !== '' || item.answer.trim() !== '')
+                    .map(item => ({
+                        topic: item.topic.trim() || 'Custom Topic',
+                        answer: item.answer.trim() || 'N/A'
+                    }));
+
+                return {
+                    values,
+                    filledCount,
+                    photoImg: state.targetPhotoImg,
+                    extras
+                };
+            }
+
+            // --- MULTI-TARGET BATCH QUEUE ---
+            function renderBatchQueueUI() {
+                const wrapper = document.getElementById('batchQueueWrapper');
+                const list = document.getElementById('batchQueueList');
+                const countText = document.getElementById('batchCountText');
+
+                if (state.savedTargetsBatch.length === 0) {
+                    wrapper.classList.add('hidden');
+                    return;
+                }
+
+                wrapper.classList.remove('hidden');
+                countText.textContent = state.savedTargetsBatch.length;
+                list.innerHTML = '';
+
+                state.savedTargetsBatch.forEach((t, idx) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'flex items-center gap-2 px-3 py-1 rounded bg-cyber-cyan/15 border border-cyber-cyan/60 text-xs text-cyber-cyan';
+                    const tName = t.values.t_name || `Target #${idx + 1}`;
+                    chip.innerHTML = `
+                        <i class="fa-solid fa-user-check"></i>
+                        <span>#${idx + 1}: <strong>${escapeHtml(tName)}</strong></span>
+                        <button type="button" data-del-batch="${idx}" class="text-cyber-danger hover:text-red-400 ml-1" title="Remove from batch">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    `;
+                    list.appendChild(chip);
+                });
+
+                list.querySelectorAll('[data-del-batch]').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const i = parseInt(this.getAttribute('data-del-batch'), 10);
+                        state.savedTargetsBatch.splice(i, 1);
+                        renderBatchQueueUI();
+                        scheduleRender();
+                    });
+                });
+            }
+
+            document.getElementById('saveTargetToBatchBtn').addEventListener('click', function () {
+                const current = getCurrentTargetSnapshot();
+                if (!current.values.t_name && current.filledCount === 0) {
+                    showToast('Please enter at least a Target Name before saving to batch.', 'danger');
+                    return;
+                }
+                state.savedTargetsBatch.push(current);
+
+                // Clear target inputs for the next target
+                TARGET_FIELDS.forEach(f => {
+                    const el = document.getElementById(f.id);
+                    if (el) el.value = '';
+                });
+                document.getElementById('clearTargetPhotoBtn').click();
+                state.extraOptions = [];
+                renderExtraOptionsUI();
+                renderBatchQueueUI();
+                scheduleRender();
+
+                showToast(`Target saved to batch! Total queued: ${state.savedTargetsBatch.length}. Mode switched to Multi-Page PDF.`, 'info');
+            });
+
+            document.getElementById('clearBatchBtn').addEventListener('click', function () {
+                state.savedTargetsBatch = [];
+                renderBatchQueueUI();
+                scheduleRender();
+                showToast('Target batch queue cleared.', 'info');
+            });
+
+            // --- HIGH-DPI HACKER THEME DOSSIER RENDERING ENGINE ---
+            // Page dimensions: 1600 x 2262 px (High-Res A4 Portrait ratio)
+            const PAGE_W = 1600;
+            const PAGE_H = 2262;
+
+            function wrapCanvasText(ctx, text, maxWidth) {
+                const words = String(text || 'N/A').split(' ');
+                const lines = [];
+                let currentLine = words[0] || '';
+
+                for (let i = 1; i < words.length; i++) {
+                    const word = words[i];
+                    const width = ctx.measureText(currentLine + ' ' + word).width;
+                    if (width < maxWidth) {
+                        currentLine += ' ' + word;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                lines.push(currentLine);
+                return lines;
+            }
+
+            function drawAgentBarcode(ctx, x, y, w, h, codeText) {
+                ctx.save();
+                const pattern = [3, 1, 2, 4, 1, 2, 1, 3, 2, 1, 4, 2, 1, 2, 3, 1, 2, 1, 3, 2];
+                let curX = x;
+                let idx = 0;
+                while (curX < x + w) {
+                    const barW = pattern[idx % pattern.length] * 2;
+                    if (curX + barW > x + w) break;
+                    ctx.fillStyle = (idx % 5 === 0) ? '#dc2626' : '#0f172a';
+                    ctx.fillRect(curX, y, barW, h);
+                    curX += barW + ((idx % 2 === 0) ? 3 : 5);
+                    idx++;
+                }
+                if (codeText) {
+                    ctx.fillStyle = '#475569';
+                    ctx.font = 'bold 12px "JetBrains Mono", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(codeText, x + w / 2, y + h + 15);
+                }
+                ctx.restore();
+            }
+
+            function drawHackerBackground(ctx, pageNum, totalPages, orgData) {
+                // 1. Clean White & Tactical Light Silver-Gray ICA Dossier Background
+                const bgGrad = ctx.createLinearGradient(0, 0, 0, PAGE_H);
+                bgGrad.addColorStop(0, '#ffffff');
+                bgGrad.addColorStop(0.5, '#f8fafc');
+                bgGrad.addColorStop(1, '#f1f5f9');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+
+                // 2. Subtle Gray & Hitman Red Tactical Engineering Grid
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+                ctx.lineWidth = 1;
+                const gridSize = 40;
+                for (let x = 0; x < PAGE_W; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, PAGE_H);
+                    ctx.stroke();
+                }
+                for (let y = 0; y < PAGE_H; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(PAGE_W, y);
+                    ctx.stroke();
+                }
+
+                // 3. Subtle Giant Hitman Sniper Crosshair Watermark in Center (Gray & Crimson)
+                ctx.save();
+                const centerX = PAGE_W / 2;
+                const centerY = PAGE_H / 2 + 120;
+                ctx.strokeStyle = 'rgba(100, 116, 139, 0.10)';
+                ctx.lineWidth = 2;
+                [260, 420, 560].forEach(r => {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+                ctx.strokeStyle = 'rgba(220, 38, 38, 0.08)';
+                ctx.beginPath();
+                ctx.moveTo(centerX - 640, centerY);
+                ctx.lineTo(centerX + 640, centerY);
+                ctx.moveTo(centerX, centerY - 640);
+                ctx.lineTo(centerX, centerY + 640);
+                ctx.stroke();
+                ctx.restore();
+
+                // 4. Hacker Hexadecimal Memory Dump on Side Margins (Light Slate Gray)
+                ctx.save();
+                ctx.font = '13px "JetBrains Mono", monospace';
+                for (let y = 120; y < PAGE_H - 100; y += 28) {
+                    const hexStr = '0x' + ((y * 2654435761) >>> 0).toString(16).toUpperCase().padStart(8, '0');
+                    ctx.fillStyle = 'rgba(100, 116, 139, 0.28)';
+                    ctx.fillText(hexStr, 10, y);
+                    ctx.fillStyle = (y % 56 === 0) ? 'rgba(220, 38, 38, 0.25)' : 'rgba(100, 116, 139, 0.28)';
+                    ctx.fillText(hexStr, PAGE_W - 96, y);
+                }
+                ctx.restore();
+
+                // 5. Outer Security Frame & Hitman Crimson/Charcoal HUD Corner Brackets
+                const pad = 42;
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(pad, pad, PAGE_W - pad * 2, PAGE_H - pad * 2);
+
+                const cornerLen = 48;
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = 5;
+                // Top-Left
+                ctx.beginPath();
+                ctx.moveTo(pad, pad + cornerLen);
+                ctx.lineTo(pad, pad);
+                ctx.lineTo(pad + cornerLen, pad);
+                ctx.stroke();
+                // Top-Right
+                ctx.beginPath();
+                ctx.moveTo(PAGE_W - pad - cornerLen, pad);
+                ctx.lineTo(PAGE_W - pad, pad);
+                ctx.lineTo(PAGE_W - pad, pad + cornerLen);
+                ctx.stroke();
+                // Bottom-Left
+                ctx.beginPath();
+                ctx.moveTo(pad, PAGE_H - pad - cornerLen);
+                ctx.lineTo(pad, PAGE_H - pad);
+                ctx.lineTo(pad + cornerLen, PAGE_H - pad);
+                ctx.stroke();
+                // Bottom-Right
+                ctx.beginPath();
+                ctx.moveTo(PAGE_W - pad - cornerLen, PAGE_H - pad);
+                ctx.lineTo(PAGE_W - pad, PAGE_H - pad);
+                ctx.lineTo(PAGE_W - pad, PAGE_H - pad - cornerLen);
+                ctx.stroke();
+
+                // 6. Top ICA Contract Classification Ribbon (Dark Slate Gray + Hitman Crimson)
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(pad + 15, pad + 12, PAGE_W - (pad + 15) * 2, 42);
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = 1.8;
+                ctx.strokeRect(pad + 15, pad + 12, PAGE_W - (pad + 15) * 2, 42);
+
+                // Left Red Tag Block
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(pad + 15, pad + 12, 230, 42);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px "JetBrains Mono", monospace';
+                ctx.fillText('ICA // LEVEL-47', pad + 32, pad + 39);
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = 'bold 18px "JetBrains Mono", monospace';
+                ctx.fillText('FLIPO GATHER // HITMAN CONTRACT & CYBER OSINT DOSSIER', pad + 264, pad + 39);
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#e2e8f0';
+                ctx.fillText(`CONTRACT: #FG-047-${new Date().getFullYear()}  |  PAGE ${pageNum} OF ${totalPages}`, PAGE_W - pad - 32, pad + 39);
+                ctx.textAlign = 'left';
+
+                // 7. Bottom Footer Bar (Light Tactical Gray with Dark Slate & Crimson Text)
+                const footY = PAGE_H - pad - 52;
+                ctx.fillStyle = '#e2e8f0';
+                ctx.fillRect(pad + 15, footY, PAGE_W - (pad + 15) * 2, 38);
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(pad + 15, footY, PAGE_W - (pad + 15) * 2, 38);
+
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 15px "JetBrains Mono", monospace';
+                ctx.fillText(`ICA / FLIPO GATHER SYSTEM  //  HANDLER: ${orgData.founder.toUpperCase()}`, pad + 30, footY + 25);
+
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#dc2626';
+                ctx.fillText(`ENCRYPTED UPLINK: ${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC`, PAGE_W - pad - 30, footY + 25);
+                ctx.textAlign = 'left';
+            }
+
+            function renderTargetPages(orgData, targetSnapshot, targetIndex, totalTargets) {
+                const allRows = [];
+
+                TARGET_FIELDS.forEach(f => {
+                    const rawVal = targetSnapshot.values[f.id];
+                    allRows.push({
+                        num: f.num,
+                        label: f.label,
+                        value: rawVal !== '' ? rawVal : '— [UNSPECIFIED]',
+                        filled: rawVal !== '',
+                        isCustom: false
+                    });
+                    if (f.num === '20') {
+                        allRows.push({
+                            num: '21',
+                            label: 'Photo Status',
+                            value: targetSnapshot.photoImg ? 'BIOMETRIC IMAGE CAPTURED [VERIFIED]' : 'DEFAULT SILHOUETTE [NO IMAGE]',
+                            filled: !!targetSnapshot.photoImg,
+                            isCustom: false
+                        });
+                    }
+                });
+
+                targetSnapshot.extras.forEach((ex, idx) => {
+                    allRows.push({
+                        num: `31.${idx + 1}`,
+                        label: ex.topic,
+                        value: ex.answer,
+                        filled: true,
+                        isCustom: true
+                    });
+                });
+
+                const FIRST_PAGE_CAPACITY = 30;
+                const NEXT_PAGE_CAPACITY = 42;
+
+                const chunks = [];
+                chunks.push(allRows.slice(0, FIRST_PAGE_CAPACITY));
+                let offset = FIRST_PAGE_CAPACITY;
+                while (offset < allRows.length) {
+                    chunks.push(allRows.slice(offset, offset + NEXT_PAGE_CAPACITY));
+                    offset += NEXT_PAGE_CAPACITY;
+                }
+
+                return { chunks, targetSnapshot, targetIndex, totalTargets };
+            }
+
+            function drawImageCover(ctx, img, x, y, w, h) {
+                const imgRatio = img.width / img.height;
+                const boxRatio = w / h;
+                let sx = 0, sy = 0, sw = img.width, sh = img.height;
+
+                if (imgRatio > boxRatio) {
+                    sw = img.height * boxRatio;
+                    sx = (img.width - sw) / 2;
+                } else {
+                    sh = img.width / boxRatio;
+                    sy = (img.height - sh) / 2;
+                }
+                ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+            }
+
+            function drawDefaultOrgEmblem(ctx, x, y, size) {
+                ctx.save();
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillRect(x, y, size, size);
+
+                const cx = x + size / 2;
+                const cy = y + size / 2;
+
+                // Outer Tactical Crosshair Ring
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, size * 0.4, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Diamond ICA-inspired Tactical Crest
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy - size * 0.34);
+                ctx.lineTo(cx + size * 0.34, cy);
+                ctx.lineTo(cx, cy + size * 0.34);
+                ctx.lineTo(cx - size * 0.34, cy);
+                ctx.closePath();
+                ctx.stroke();
+
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 28px "Share Tech Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('ICA', cx, cy + 4);
+
+                ctx.fillStyle = '#dc2626';
+                ctx.font = 'bold 13px "JetBrains Mono", monospace';
+                ctx.fillText('UNIT // 47', cx, cy + 24);
+                ctx.restore();
+            }
+
+            function drawDefaultTargetAvatar(ctx, x, y, w, h) {
+                ctx.save();
+                ctx.fillStyle = '#e2e8f0';
+                ctx.fillRect(x, y, w, h);
+
+                const cx = x + w / 2;
+                const cy = y + h / 2 - 12;
+
+                // Silhouette head & suited shoulders (Agent 47 dark charcoal silhouette on light gray)
+                ctx.fillStyle = '#334155';
+                ctx.beginPath();
+                ctx.arc(cx, cy - 22, 34, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(cx, cy + 92, 74, Math.PI * 1.15, Math.PI * 1.85);
+                ctx.fill();
+
+                // Red tie accent on silhouette
+                ctx.fillStyle = '#dc2626';
+                ctx.beginPath();
+                ctx.moveTo(cx, cy + 22);
+                ctx.lineTo(cx - 7, cy + 56);
+                ctx.lineTo(cx, cy + 68);
+                ctx.lineTo(cx + 7, cy + 56);
+                ctx.closePath();
+                ctx.fill();
+
+                // Sniper Scope Crosshair Rings
+                ctx.strokeStyle = 'rgba(220, 38, 38, 0.45)';
+                ctx.lineWidth = 1.5;
+                [42, 74].forEach(r => {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+
+                ctx.beginPath();
+                ctx.moveTo(cx - 90, cy);
+                ctx.lineTo(cx + 90, cy);
+                ctx.moveTo(cx, cy - 90);
+                ctx.lineTo(cx, cy + 90);
+                ctx.stroke();
+
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 13px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('TARGET SILHOUETTE LOCK', cx, y + h - 40);
+                ctx.restore();
+            }
+
+            function drawSniperReticleOverlay(ctx, x, y, w, h) {
+                ctx.save();
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = 3;
+                const b = 22;
+                // Top-left reticle bracket
+                ctx.beginPath();
+                ctx.moveTo(x + 8, y + 8 + b);
+                ctx.lineTo(x + 8, y + 8);
+                ctx.lineTo(x + 8 + b, y + 8);
+                ctx.stroke();
+                // Top-right reticle bracket
+                ctx.beginPath();
+                ctx.moveTo(x + w - 8 - b, y + 8);
+                ctx.lineTo(x + w - 8, y + 8);
+                ctx.lineTo(x + w - 8, y + 8 + b);
+                ctx.stroke();
+                // Bottom-left reticle bracket
+                ctx.beginPath();
+                ctx.moveTo(x + 8, y + h - 38 - b);
+                ctx.lineTo(x + 8, y + h - 38);
+                ctx.lineTo(x + 8 + b, y + h - 38);
+                ctx.stroke();
+                // Bottom-right reticle bracket
+                ctx.beginPath();
+                ctx.moveTo(x + w - 8 - b, y + h - 38);
+                ctx.lineTo(x + w - 8, y + h - 38);
+                ctx.lineTo(x + w - 8, y + h - 38 - b);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            function buildAllDossierCanvases() {
+                const orgData = getOrganizationData();
+                const currentTarget = getCurrentTargetSnapshot();
+
+                const targetsToRender = [...state.savedTargetsBatch];
+                if (targetsToRender.length === 0 || currentTarget.filledCount > 0 || currentTarget.values.t_name) {
+                    targetsToRender.push(currentTarget);
+                }
+
+                const pageDescriptors = [];
+                targetsToRender.forEach((tSnap, tIdx) => {
+                    const { chunks } = renderTargetPages(orgData, tSnap, tIdx + 1, targetsToRender.length);
+                    chunks.forEach((rowsChunk, chunkIdx) => {
+                        pageDescriptors.push({
+                            orgData,
+                            targetSnapshot: tSnap,
+                            targetNum: tIdx + 1,
+                            totalTargets: targetsToRender.length,
+                            isFirstPageOfTarget: chunkIdx === 0,
+                            rowsChunk
+                        });
+                    });
+                });
+
+                const totalPages = pageDescriptors.length;
+                const canvases = [];
+
+                pageDescriptors.forEach((desc, pIdx) => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = PAGE_W;
+                    canvas.height = PAGE_H;
+                    const ctx = canvas.getContext('2d');
+
+                    drawHackerBackground(ctx, pIdx + 1, totalPages, desc.orgData);
+
+                    let cursorY = 114;
+                    const leftX = 68;
+                    const contentW = PAGE_W - leftX * 2;
+
+                    if (desc.isFirstPageOfTarget) {
+                        // --- BLOCK A: ORGANIZATION / ICA HANDLER HEADER BOX (White & Gray Tactical Panel) ---
+                        const orgBoxH = 195;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(leftX, cursorY, contentW, orgBoxH);
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(leftX, cursorY, contentW, orgBoxH);
+
+                        // Top-left Crimson Accent Strip
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(leftX, cursorY, contentW, 6);
+
+                        // Top-right Agent 47 Barcode inside Organization Header
+                        drawAgentBarcode(ctx, leftX + contentW - 235, cursorY + 26, 210, 34, 'ICA-AUTH // 047-640509');
+
+                        // Organization Logo Frame (Left)
+                        const logoSize = 150;
+                        const logoX = leftX + 22;
+                        const logoY = cursorY + 24;
+                        if (desc.orgData.photoImg) {
+                            drawImageCover(ctx, desc.orgData.photoImg, logoX, logoY, logoSize, logoSize);
+                        } else {
+                            drawDefaultOrgEmblem(ctx, logoX, logoY, logoSize);
+                        }
+                        ctx.strokeStyle = '#334155';
+                        ctx.lineWidth = 2.5;
+                        ctx.strokeRect(logoX, logoY, logoSize, logoSize);
+
+                        // Organization Text Details (1-4)
+                        const orgTextX = logoX + logoSize + 28;
+                        ctx.fillStyle = '#dc2626';
+                        ctx.font = 'bold 16px "JetBrains Mono", monospace';
+                        ctx.fillText('[ICA // HANDLER & ORGANIZATION AUTHORITY RECORD]', orgTextX, cursorY + 38);
+
+                        ctx.fillStyle = '#0f172a';
+                        ctx.font = 'bold 32px "Share Tech Mono", monospace';
+                        ctx.fillText(`1. ORG NAME: ${desc.orgData.name.toUpperCase()}`, orgTextX, cursorY + 76);
+
+                        ctx.fillStyle = '#334155';
+                        ctx.font = 'bold 19px "JetBrains Mono", monospace';
+                        ctx.fillText(`2. ADDRESS : ${desc.orgData.address}`, orgTextX, cursorY + 112);
+                        ctx.fillText(`3. FOUNDER : ${desc.orgData.founder}`, orgTextX, cursorY + 142);
+
+                        ctx.fillStyle = '#475569';
+                        ctx.font = 'italic bold 19px "JetBrains Mono", monospace';
+                        ctx.fillText(`4. MOTO    : "${desc.orgData.motto}"`, orgTextX, cursorY + 174);
+
+                        cursorY += orgBoxH + 22;
+
+                        // --- BLOCK B: TARGET CONTRACT BANNER + SNIPER MUGSHOT (#21) ---
+                        const heroH = 265;
+                        ctx.fillStyle = '#f8fafc';
+                        ctx.fillRect(leftX, cursorY, contentW, heroH);
+                        ctx.strokeStyle = '#64748b';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(leftX, cursorY, contentW, heroH);
+
+                        // Crimson Left Vertical Strike Bar
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(leftX, cursorY, 12, heroH);
+
+                        // Target Mugshot / Photo Box (Right side of Hero)
+                        const tPhotoW = 225;
+                        const tPhotoH = 225;
+                        const tPhotoX = leftX + contentW - tPhotoW - 20;
+                        const tPhotoY = cursorY + 20;
+
+                        if (desc.targetSnapshot.photoImg) {
+                            drawImageCover(ctx, desc.targetSnapshot.photoImg, tPhotoX, tPhotoY, tPhotoW, tPhotoH);
+                        } else {
+                            drawDefaultTargetAvatar(ctx, tPhotoX, tPhotoY, tPhotoW, tPhotoH);
+                        }
+                        drawSniperReticleOverlay(ctx, tPhotoX, tPhotoY, tPhotoW, tPhotoH);
+
+                        ctx.strokeStyle = '#1e293b';
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(tPhotoX, tPhotoY, tPhotoW, tPhotoH);
+
+                        // Target Photo Label Tag
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(tPhotoX, tPhotoY + tPhotoH - 32, tPhotoW, 32);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = 'bold 14px "JetBrains Mono", monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('21. TARGET LOCKED // BIOMETRIC', tPhotoX + tPhotoW / 2, tPhotoY + tPhotoH - 11);
+                        ctx.textAlign = 'left';
+
+                        // Target Primary Summary (Left side of Hero)
+                        const sumX = leftX + 32;
+                        const targetName = desc.targetSnapshot.values.t_name || 'UNIDENTIFIED CONTRACT TARGET';
+                        const targetRoll = desc.targetSnapshot.values.t_roll || 'N/A';
+                        const targetSec = desc.targetSnapshot.values.t_section || 'N/A';
+                        const targetPhone = desc.targetSnapshot.values.t_phone || 'N/A';
+                        const targetAmbition = desc.targetSnapshot.values.t_ambition || 'N/A';
+
+                        ctx.fillStyle = '#dc2626';
+                        ctx.font = 'bold 17px "JetBrains Mono", monospace';
+                        ctx.fillText(`>> CONTRACT SUBJECT #${String(desc.targetNum).padStart(2, '0')} // ACTIVE CYBER-RECON & HITMAN DOSSIER`, sumX, cursorY + 38);
+
+                        ctx.fillStyle = '#0f172a';
+                        ctx.font = 'bold 42px "Share Tech Mono", monospace';
+                        ctx.fillText(targetName.toUpperCase(), sumX, cursorY + 90);
+
+                        // Quick Badge Gray Bar
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.fillRect(sumX, cursorY + 112, tPhotoX - sumX - 30, 46);
+                        ctx.strokeStyle = '#94a3b8';
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeRect(sumX, cursorY + 112, tPhotoX - sumX - 30, 46);
+
+                        ctx.fillStyle = '#0f172a';
+                        ctx.font = 'bold 20px "JetBrains Mono", monospace';
+                        ctx.fillText(`ROLL: ${targetRoll}   |   SECTION: ${targetSec}   |   PHONE: ${targetPhone}`, sumX + 16, cursorY + 142);
+
+                        ctx.fillStyle = '#1e293b';
+                        ctx.font = 'bold 19px "JetBrains Mono", monospace';
+                        ctx.fillText(`OBJECTIVE / GOAL (#30): ${targetAmbition}`, sumX, cursorY + 195);
+
+                        ctx.fillStyle = '#475569';
+                        ctx.font = 'bold 16px "JetBrains Mono", monospace';
+                        ctx.fillText(`STATUS: ICA OSINT VERIFIED   |   EXTRA INTEL VECTORS (#31): ${desc.targetSnapshot.extras.length}`, sumX, cursorY + 232);
+
+                        cursorY += heroH + 24;
+                    } else {
+                        // Continuation Page Banner
+                        const contH = 74;
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.fillRect(leftX, cursorY, contentW, contH);
+                        ctx.strokeStyle = '#dc2626';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(leftX, cursorY, contentW, contH);
+
+                        ctx.fillStyle = '#0f172a';
+                        ctx.font = 'bold 26px "Share Tech Mono", monospace';
+                        const tName = desc.targetSnapshot.values.t_name || `TARGET #${desc.targetNum}`;
+                        ctx.fillText(`>> CONTINUATION CONTRACT DOSSIER: ${tName.toUpperCase()} (SUPPLEMENTAL OSINT)`, leftX + 24, cursorY + 46);
+
+                        cursorY += contH + 24;
+                    }
+
+                    // --- BLOCK C: 2-COLUMN STRUCTURED DATA GRID (Clean White & Tactical Gray Cards) ---
+                    const cols = 2;
+                    const colGap = 22;
+                    const colW = (contentW - colGap) / cols;
+                    const rowH = 88;
+                    const rowGap = 12;
+
+                    desc.rowsChunk.forEach((row, idx) => {
+                        const colIdx = idx % cols;
+                        const rowIdx = Math.floor(idx / cols);
+
+                        const cellX = leftX + colIdx * (colW + colGap);
+                        const cellY = cursorY + rowIdx * (rowH + rowGap);
+
+                        // Card Box (White for standard fields, soft warm gray-tint for custom #31)
+                        ctx.fillStyle = row.isCustom ? '#f8fafc' : (row.filled ? '#ffffff' : '#f1f5f9');
+                        ctx.fillRect(cellX, cellY, colW, rowH);
+
+                        ctx.strokeStyle = row.isCustom ? '#1e293b' : (row.filled ? '#94a3b8' : '#cbd5e1');
+                        ctx.lineWidth = 1.5;
+                        ctx.strokeRect(cellX, cellY, colW, rowH);
+
+                        // Left Accent Bar (Hitman Crimson for filled fields, Dark Charcoal for Custom #31, Light Gray for empty)
+                        ctx.fillStyle = row.isCustom ? '#0f172a' : (row.filled ? '#dc2626' : '#cbd5e1');
+                        ctx.fillRect(cellX, cellY, 7, rowH);
+
+                        // Field Number & Topic/Label
+                        ctx.fillStyle = row.isCustom ? '#dc2626' : '#475569';
+                        ctx.font = 'bold 15px "JetBrains Mono", monospace';
+                        const headerText = `${row.num}. ${String(row.label).toUpperCase()}:`;
+                        ctx.fillText(headerText, cellX + 18, cellY + 28);
+
+                        // Field Value / Answer (Crisp Dark Charcoal on White)
+                        ctx.fillStyle = row.filled ? '#0f172a' : '#94a3b8';
+                        ctx.font = row.filled ? 'bold 20px "JetBrains Mono", monospace' : '17px "JetBrains Mono", monospace';
+
+                        const wrapped = wrapCanvasText(ctx, row.value, colW - 34);
+                        ctx.fillText(wrapped[0] || '', cellX + 18, cellY + 58);
+                        if (wrapped.length > 1) {
+                            ctx.font = 'bold 15px "JetBrains Mono", monospace';
+                            ctx.fillStyle = '#475569';
+                            ctx.fillText(wrapped[1].slice(0, 48) + (wrapped[1].length > 48 ? '...' : ''), cellX + 18, cellY + 78);
+                        }
+                    });
+
+                    canvases.push(canvas);
+                });
+
+                return canvases;
+            }
+
+            // --- LIVE PREVIEW & SMART BADGE UPDATER ---
+            let renderTimeout = null;
+            function scheduleRender() {
+                if (renderTimeout) clearTimeout(renderTimeout);
+                renderTimeout = setTimeout(updateDossierPreview, 30);
+            }
+
+            function updateDossierPreview() {
+                const currentSnap = getCurrentTargetSnapshot();
+                filledCountBadge.textContent = `${currentSnap.filledCount} / 30 Intel Locked`;
+
+                state.renderedCanvases = buildAllDossierCanvases();
+                const totalPages = state.renderedCanvases.length;
+
+                if (state.currentPreviewPage >= totalPages) {
+                    state.currentPreviewPage = Math.max(0, totalPages - 1);
+                }
+
+                // Draw selected page onto visible preview canvas
+                const activeCanvas = state.renderedCanvases[state.currentPreviewPage];
+                if (activeCanvas) {
+                    previewCanvas.width = PAGE_W;
+                    previewCanvas.height = PAGE_H;
+                    const pCtx = previewCanvas.getContext('2d');
+                    pCtx.drawImage(activeCanvas, 0, 0);
+                }
+
+                // Update pagination bar
+                pageIndicatorText.textContent = `PAGE ${state.currentPreviewPage + 1} OF ${totalPages}`;
+                prevPageBtn.disabled = state.currentPreviewPage === 0;
+                nextPageBtn.disabled = state.currentPreviewPage >= totalPages - 1;
+
+                // Update 1 = PNG vs 1+ = PDF status indicators
+                const isMulti = totalPages > 1 || state.savedTargetsBatch.length > 0;
+                if (isMulti) {
+                    outputModeBadge.textContent = `MODE: ${totalPages} PAGES (1+) → PDF FILE`;
+                    outputModeBadge.className = 'text-xs px-2.5 py-1 rounded font-bold bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan';
+                    smartBtnText.textContent = `COMPILE CONTRACT (AUTO: ${totalPages}-PAGE PDF FILE)`;
+                } else {
+                    outputModeBadge.textContent = 'MODE: 1 RECORD → PNG FILE';
+                    outputModeBadge.className = 'text-xs px-2.5 py-1 rounded font-bold bg-cyber-neon/20 text-cyber-neon border border-cyber-neon';
+                    smartBtnText.textContent = 'COMPILE CONTRACT (AUTO: PNG FILE)';
+                }
+            }
+
+            prevPageBtn.addEventListener('click', function () {
+                if (state.currentPreviewPage > 0) {
+                    state.currentPreviewPage--;
+                    updateDossierPreview();
+                }
+            });
+
+            nextPageBtn.addEventListener('click', function () {
+                if (state.currentPreviewPage < state.renderedCanvases.length - 1) {
+                    state.currentPreviewPage++;
+                    updateDossierPreview();
+                }
+            });
+
+            // --- EXPORT FUNCTIONS (PNG & PDF) ---
+            function sanitizeFilename(name) {
+                return String(name || 'TARGET')
+                    .replace(/[^a-zA-Z0-9_-]/g, '_')
+                    .replace(/_+/g, '_')
+                    .toUpperCase();
+            }
+
+            function triggerBlobDownload(blob, filename) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.style.display = 'none';
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 250);
+            }
+
+            function exportAsPNG() {
+                try {
+                    updateDossierPreview();
+                    const targetName = sanitizeFilename(document.getElementById('t_name').value.trim() || 'DOSSIER');
+                    const canvas = state.renderedCanvases[state.currentPreviewPage] || state.renderedCanvases[0];
+                    if (!canvas) {
+                        showToast('Unable to render canvas for PNG.', 'danger');
+                        return;
+                    }
+
+                    const fileName = `FLIPO_GATHER_${targetName}.png`;
+                    if (canvas.toBlob) {
+                        canvas.toBlob(function (blob) {
+                            if (blob) {
+                                triggerBlobDownload(blob, fileName);
+                                showToast(`PNG File downloaded: ${fileName}`, 'success');
+                            } else {
+                                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                                const link = document.createElement('a');
+                                link.download = fileName;
+                                link.href = dataUrl;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                showToast(`PNG File downloaded: ${fileName}`, 'success');
+                            }
+                        }, 'image/png', 1.0);
+                    } else {
+                        const dataUrl = canvas.toDataURL('image/png', 1.0);
+                        const link = document.createElement('a');
+                        link.download = fileName;
+                        link.href = dataUrl;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast(`PNG File downloaded: ${fileName}`, 'success');
+                    }
+                } catch (err) {
+                    console.error('PNG Export Error:', err);
+                    showToast('Error generating PNG file. Please try again.', 'danger');
+                }
+            }
+
+            function exportAsPDF() {
+                try {
+                    updateDossierPreview();
+                    const jspdfLib = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : (window.jsPDF || null);
+                    if (!jspdfLib) {
+                        showToast('PDF Engine is loading, please try again in a second.', 'danger');
+                        return;
+                    }
+
+                    const pdf = new jspdfLib({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4',
+                        compress: true
+                    });
+
+                    const pdfW = pdf.internal.pageSize.getWidth();
+                    const pdfH = pdf.internal.pageSize.getHeight();
+
+                    state.renderedCanvases.forEach((canvas, idx) => {
+                        if (idx > 0) {
+                            pdf.addPage();
+                        }
+                        const imgData = canvas.toDataURL('image/jpeg', 0.96);
+                        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+                    });
+
+                    const targetName = sanitizeFilename(document.getElementById('t_name').value.trim() || 'DOSSIER');
+                    const fileName = `FLIPO_GATHER_${targetName}.pdf`;
+                    const pdfBlob = pdf.output('blob');
+                    triggerBlobDownload(pdfBlob, fileName);
+                    showToast(`PDF File downloaded (${state.renderedCanvases.length} Page(s)): ${fileName}`, 'info');
+                } catch (err) {
+                    console.error('PDF Export Error:', err);
+                    showToast('Error generating PDF file. Please try again.', 'danger');
+                }
+            }
+
+            // Smart Generate Button: 1 = PNG File, 1+ = PDF File
+            document.getElementById('smartGenerateBtn').addEventListener('click', function () {
+                updateDossierPreview();
+                const isMulti = state.renderedCanvases.length > 1 || state.savedTargetsBatch.length > 0;
+                if (isMulti) {
+                    exportAsPDF();
+                } else {
+                    exportAsPNG();
+                }
+            });
+
+            document.getElementById('exportPngBtn').addEventListener('click', exportAsPNG);
+            document.getElementById('exportPdfBtn').addEventListener('click', exportAsPDF);
+
+            // --- FIELD SEARCH / FILTER ---
+            const fieldFilterInput = document.getElementById('fieldFilterInput');
+            const clearFilterBtn = document.getElementById('clearFilterBtn');
+            const fieldItems = document.querySelectorAll('.field-item');
+
+            fieldFilterInput.addEventListener('input', function () {
+                const q = this.value.trim().toLowerCase();
+                clearFilterBtn.classList.toggle('hidden', q === '');
+
+                fieldItems.forEach(item => {
+                    const labelData = item.getAttribute('data-label') || '';
+                    if (!q || labelData.includes(q)) {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            });
+
+            clearFilterBtn.addEventListener('click', function () {
+                fieldFilterInput.value = '';
+                clearFilterBtn.classList.add('hidden');
+                fieldItems.forEach(item => item.classList.remove('hidden'));
+            });
+
+            // --- ATTACH LIVE INPUT LISTENERS TO ALL FORM INPUTS ---
+            ['orgName', 'orgAddress', 'orgFounder', 'orgMotto'].forEach(id => {
+                document.getElementById(id).addEventListener('input', scheduleRender);
+            });
+
+            TARGET_FIELDS.forEach(f => {
+                const el = document.getElementById(f.id);
+                if (el) {
+                    el.addEventListener('input', scheduleRender);
+                }
+            });
+
+            // --- SAMPLE / DEMO DATA LOADER ---
+            document.getElementById('loadDemoBtn').addEventListener('click', function () {
+                document.getElementById('orgName').value = 'INTERNATIONAL CONTRACT AGENCY (ICA)';
+                document.getElementById('orgAddress').value = 'Facility-47, Sector-9 Underground Server Core';
+                document.getElementById('orgFounder').value = 'Diana Burnwood // Handler Zero';
+                document.getElementById('orgMotto').value = 'Merces Letifer // Unseen. Unheard. Omniscient.';
+
+                const demoValues = {
+                    t_name: 'Viktor "Cipher_47" Kovalenko',
+                    t_roll: '0047',
+                    t_section: 'Phantom-Division',
+                    t_phone: '+880 1711-047047',
+                    t_fatherName: 'Nikolai Kovalenko',
+                    t_motherName: 'Elena Rostova',
+                    t_email: 'cipher47.ica@protonmail.ch',
+                    t_address: 'Penthouse 19, Glass Spire, Sector 11, Dhaka',
+                    t_isp: 'Starlink Dark-Fiber Encrypted Node',
+                    t_instagram: '@ghost_agent47',
+                    t_telegram: '@ica_contract_ops',
+                    t_xid: '@hitman_zero_x',
+                    t_youtube: '@ICACyberRecon',
+                    t_favColor: 'Hitman Crimson (#FF003C) & Tactical Gray',
+                    t_favFood: 'Filet Mignon & Double Espresso',
+                    t_favNumber: '47',
+                    t_dob: '2004-09-05',
+                    t_birthDay: 'Sunday',
+                    t_age: '22 Years',
+                    t_weight: '74 kg',
+                    t_bestFriend: 'Lucas Grey (Shadow_Client)',
+                    t_fatherMobile: '+880 1819-470001',
+                    t_motherMobile: '+880 1912-470002',
+                    t_schoolId: 'ICA-ACAD-0047',
+                    t_nid: '4709182736450',
+                    t_enemy: 'Providence Syndicate // Arthur Edwards',
+                    t_personalNum: '+880 1600-000047',
+                    t_bodyColor: 'Pale Tactical',
+                    t_ambition: 'Master Cyber-Intelligence & Stealth Operative'
+                };
+
+                Object.keys(demoValues).forEach(k => {
+                    const el = document.getElementById(k);
+                    if (el) el.value = demoValues[k];
+                });
+
+                state.extraOptions = [
+                    { id: 1, topic: 'Signature Loadout', answer: 'Silverballer Dual-Suppressed + Flipper Zero' },
+                    { id: 2, topic: 'Kernel Exploit Fingerprint', answer: '0x47-ICA-ROOTKIT-STEALTH' }
+                ];
+
+                renderExtraOptionsUI();
+                updateDossierPreview();
+                showToast('Agent-47 ICA Contract & Hacker OSINT profile loaded!', 'success');
+            });
+
+            // --- Toggle CRT Scanlines ---
+            document.getElementById('toggleCrtBtn').addEventListener('click', function () {
+                const crt = document.getElementById('crtOverlay');
+                crt.classList.toggle('hidden');
+            });
+
+            // --- Reset All Button ---
+            document.getElementById('resetAllBtn').addEventListener('click', function () {
+                ['orgName', 'orgAddress', 'orgFounder', 'orgMotto'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                TARGET_FIELDS.forEach(f => {
+                    const el = document.getElementById(f.id);
+                    if (el) el.value = '';
+                });
+                document.getElementById('clearOrgPhotoBtn').click();
+                document.getElementById('clearTargetPhotoBtn').click();
+                state.extraOptions = [];
+                state.savedTargetsBatch = [];
+                renderExtraOptionsUI();
+                renderBatchQueueUI();
+                updateDossierPreview();
+                showToast('All fields and batch records reset.', 'danger');
+            });
+
+            // --- INITIALIZE IMMEDIATELY ---
+            renderExtraOptionsUI();
+            updateDossierPreview();
+        })();
+    </script>
+</body>
+</html>
